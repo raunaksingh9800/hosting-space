@@ -88,7 +88,7 @@ export default function DashboardLayout({
 
       {/* Page Content */}
       <div className=" mx-5 md:mx-10 mt-5">{children}</div>
-      <footer className="w-screen h-[20vh] border-t-1 border-dashed border-white/20  mt-10"></footer>
+      <footer className="w-screen h-[20vh] border-t-1 border-dashed border-black/20 dark:border-white/20  mt-10"></footer>
     </div>
   );
 }
