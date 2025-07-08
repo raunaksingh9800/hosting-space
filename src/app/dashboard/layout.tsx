@@ -10,6 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Plus, Cloudy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+import {
+
+  SignedIn,
+  
+  UserButton,
+} from "@clerk/nextjs";
 
 export default function DashboardLayout({
   children,
@@ -52,10 +58,13 @@ export default function DashboardLayout({
           >
             Add New <Plus />
           </Button>
-          <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>PF</AvatarFallback>
-          </Avatar>
+
+          <div className="flex flex-col items-center justify-center">
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+          </div>
+
         </div>
       </nav>
 
