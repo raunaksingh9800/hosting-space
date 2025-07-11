@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Unhandled event type" }, { status: 400 });
   }
 
-  const { id, first_name, last_name, email_addresses, image_url } = data;
+  const { id, first_name, last_name } = data;
 
   try {
     await prisma.user.upsert({
