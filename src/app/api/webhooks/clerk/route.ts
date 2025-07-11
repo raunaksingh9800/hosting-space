@@ -14,11 +14,14 @@ export async function POST(req: NextRequest) {
       return new Response('Event not handled', { status: 200 });
     }
 
-    const {
-      id: clerkId,
-      first_name,
-      last_name,
-    } = data;
+    // Type guard to ensure data is a user object
+    if (!('id' in data) || !('first_name' in data) || !('last_name' in data)) {
+      return new Response('Invalid user data', { status: 400 });
+    }
+
+    const clerkId = data.id as string;
+    const first_name = (data as any).first_name as string | undefined;
+    const last_name = (data as any).last_name as string | undefined;
 
     const fullName = `${first_name ?? ''} ${last_name ?? ''}`.trim();
 
@@ -32,7 +35,6 @@ export async function POST(req: NextRequest) {
         aiCredits: 0,
         plan: 'free',
         siteCount: 0,
-
       },
     });
 
