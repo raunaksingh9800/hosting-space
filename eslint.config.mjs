@@ -19,6 +19,7 @@ const eslintConfig = [
       "src/generated/**",      // ✅ ignore generated prisma files
       "**/*.config.js",        // optional, if you don't want to lint config files
       "**/*.d.ts",             // optional, to ignore type declaration files
+      "src/app/api/webhooks/clerk/route.ts",
     ],
   },
 ];

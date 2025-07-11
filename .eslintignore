@@ -1,2 +1,3 @@
 # .eslintignore
 src/generated/
+src/app/api/webhooks/clerk/route.ts
