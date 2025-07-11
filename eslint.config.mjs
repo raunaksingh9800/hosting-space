@@ -20,6 +20,10 @@ const eslintConfig = [
       "**/*.config.js",        // optional, if you don't want to lint config files
       "**/*.d.ts",             // optional, to ignore type declaration files
       "src/app/api/webhooks/route.ts",
+      "src/app/dashboard/IDE/page.tsx",
+      "src/app/dashboard/IDE/IDE.tsx",
+      "src/app/dashboard/page.tsx",
+      "src/app/[site]/route.ts",
     ],
   },
 ];

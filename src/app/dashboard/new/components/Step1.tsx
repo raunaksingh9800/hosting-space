@@ -3,13 +3,15 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import SelectBox from "./SelectBox";
-
 type Step1Props = {
   projectName: string;
   setProjectName: (v: string) => void;
   route: string;
   setRoute: (v: string) => void;
+  buildTypeIndex: number;
+  setBuildTypeIndex: (i: number) => void;
   onNext: () => void;
+  routeStatus: "idle" | "checking" | "available" | "taken";
 };
 
 export default function Step1({
@@ -18,6 +20,9 @@ export default function Step1({
   route,
   setRoute,
   onNext,
+  buildTypeIndex,
+  setBuildTypeIndex,
+  routeStatus,
 }: Step1Props) {
   return (
     <>
@@ -48,16 +53,29 @@ export default function Step1({
         />
         <label className="text-sm flex flex-row">
           <div className="opacity-40">Your URL will be&nbsp;</div>
-          <strong className="opacity-80">hosting.space/{route}</strong>
+          <strong className="opacity-80">
+            hosting.space/{route}{" "}
+            {route && (
+              <>
+                {routeStatus === "checking" && "Checking availability..."}
+                {routeStatus === "available" &&  <span className=" text-green-400">is available</span>}
+                {routeStatus === "taken" && <span className=" text-red-400">is already taken</span>}
+              </>
+            )}{" "}
+          </strong>
         </label>
       </div>
 
-      <SelectBox />
+      <SelectBox selected={buildTypeIndex} onChange={setBuildTypeIndex} />
 
       <div className="w-full h-fit mt-8">
-        <Button className="w-full" onClick={onNext}>
-          Next
-        </Button>
+<Button
+className="w-full"
+  onClick={onNext}
+  disabled={!projectName || !route || routeStatus !== "available"}
+>
+  Next
+</Button>
       </div>
     </>
   );

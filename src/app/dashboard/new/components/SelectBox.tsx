@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Code, Sparkles, LayoutPanelTop } from "lucide-react";
 
@@ -9,32 +8,35 @@ const options = [
   { label: "Create with AI", icon: Sparkles },
   { label: "Templates", icon: LayoutPanelTop },
 ];
-
-export default function SelectBox() {
-  const [selected, setSelected] = useState(1); // Default to "Create with AI"
-
+type Props = {
+  selected: number;
+  onChange: (index: number) => void;
+};
+export default function SelectBox({ selected, onChange }: Props) {
   return (
     <div className="mt-5 flex flex-col gap-4">
-      <label htmlFor="" className=" text-sm ">
-        Build Type
-      </label>
-      <div className="w-full  h-[12vh] flex flex-row justify-between gap-3 rounded-md relative">
+      <label className="text-sm">Build Type</label>
+      <div className="w-full h-[12vh] flex flex-row justify-between gap-3 rounded-md relative">
         {options.map((option, i) => {
           const Icon = option.icon;
           const isActive = selected === i;
           const isAI = option.label === "Create with AI";
+          const isDisabled = i !== 0; // Only "Custom Build" is enabled
 
           return (
             <button
               key={option.label}
-              onClick={() => setSelected(i)}
+              onClick={() => {
+                if (!isDisabled) onChange(i);
+              }}
               className={`relative flex flex-col w-1/3 h-full border border-black/30 dark:border-white/30 rounded-md justify-center items-center gap-2 text-sm font-medium transition-all duration-300 overflow-hidden ${
                 isActive
                   ? "text-black dark:text-white"
-                  : " text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"
-              }`}
+                  : "text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"
+              } ${isDisabled ? "opacity-40 pointer-events-none cursor-not-allowed" : ""}`}
+              disabled={isDisabled}
+              aria-disabled={isDisabled}
             >
-              {/* White border for other boxes */}
               {isActive && !isAI && (
                 <motion.div
                   layoutId="highlight"
@@ -42,12 +44,10 @@ export default function SelectBox() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-
-              {/* Animated gradient border for Create with AI */}
               {isActive && isAI && (
                 <motion.div
                   layoutId="highlight"
-                  className="absolute inset-0 p-[2px]  bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-gradient"
+                  className="absolute inset-0 p-[2px] bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-gradient"
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 >
                   <div className="w-full h-full bg-white rounded-[6px] text-black dark:text-white dark:bg-zinc-900" />
