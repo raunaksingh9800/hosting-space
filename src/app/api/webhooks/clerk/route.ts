@@ -3,25 +3,30 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  const { type, data } = body;
 
-  const { id, first_name, last_name } = body;
+  if (type !== "user.created") {
+    return NextResponse.json({ message: "Unhandled event type" }, { status: 400 });
+  }
 
-  if (!id) return NextResponse.json({ error: "Missing Clerk ID" }, { status: 400 });
+  const { id, first_name, last_name, email_addresses, image_url } = data;
 
   try {
-    // Create user in Prisma
     await prisma.user.upsert({
       where: { authId: id },
       update: {},
       create: {
         authId: id,
         name: `${first_name ?? ""} ${last_name ?? ""}`.trim(),
+        // You can also store email or image if needed
+        // email: email_addresses?.[0]?.email_address,
+        // image: image_url
       },
     });
 
     return NextResponse.json({ status: "User created or exists" });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
   }
 }
