@@ -1,32 +1,46 @@
-import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { verifyWebhook } from '@clerk/nextjs/webhooks';
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { type, data } = body;
-
-  if (type !== "user.created") {
-    return NextResponse.json({ message: "Unhandled event type" }, { status: 400 });
-  }
-
-  const { id, first_name, last_name } = data;
-
   try {
+    const evt = await verifyWebhook(req);
+
+    const eventType = evt.type;
+    const data = evt.data;
+
+    // We're only interested in user.created events
+    if (eventType !== 'user.created') {
+      return new Response('Event not handled', { status: 200 });
+    }
+
+    const {
+      id: clerkId,
+      first_name,
+      last_name,
+    } = data;
+
+    const fullName = `${first_name ?? ''} ${last_name ?? ''}`.trim();
+
+    // Upsert user in DB
     await prisma.user.upsert({
-      where: { authId: id },
+      where: { authId: clerkId },
       update: {},
       create: {
-        authId: id,
-        name: `${first_name ?? ""} ${last_name ?? ""}`.trim(),
-        // You can also store email or image if needed
-        // email: email_addresses?.[0]?.email_address,
-        // image: image_url
+        authId: clerkId,
+        name: fullName,
+        aiCredits: 0,
+        plan: 'free',
+        siteCount: 0,
+
       },
     });
 
-    return NextResponse.json({ status: "User created or exists" });
+    console.log(`✅ Synced user ${fullName} (${clerkId})`);
+    return new Response('Webhook received and user synced', { status: 200 });
+
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+    console.error('❌ Error verifying or handling webhook:', err);
+    return new Response('Error verifying webhook', { status: 400 });
   }
 }
