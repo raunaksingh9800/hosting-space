@@ -28,7 +28,6 @@ export default function DashboardLayout({}: object) {
         </div>
         <div className="flex flex-row gap-4 md:gap-5">
           <ModeToggle />
-
           {/* Show Sign In if signed out */}
           <SignedOut>
             <SignUpButton signInFallbackRedirectUrl="/dashboard" forceRedirectUrl="/dashboard" signInForceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard">
