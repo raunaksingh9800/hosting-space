@@ -16,13 +16,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
-  Cloud,
+  Save,
   ChevronDown,
   ExternalLink,
   Check,
   Globe,
   Code,
-
   ArrowUp,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -246,7 +245,7 @@ export default function AiPage() {
             {publishState === "error" && "Error"}
             {publishState === "idle" && (
               <>
-                Publish <Cloud />
+                Save <Save />
               </>
             )}
           </Button>
@@ -267,12 +266,11 @@ export default function AiPage() {
             <Button
               onClick={handleSendPrompt}
               variant={"outline"}
-              disabled= {!prompt.trim()}
+              disabled={!prompt.trim()}
             >
               {loading ? (
                 <>
                   <h1 className="text-center">
-                    
                     <span className=" animate-pulse bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent font-semibold">
                       Thinking
                     </span>
