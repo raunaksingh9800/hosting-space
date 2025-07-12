@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Cloud, ChevronDown, ExternalLink, Check, Globe, Sparkles } from "lucide-react";
+import { Save, ChevronDown, ExternalLink, Check, Globe, Sparkles } from "lucide-react";
 
 export default function IDE() {
   const searchParams = useSearchParams();
@@ -223,7 +223,7 @@ export default function IDE() {
             {publishState === "error" && "Error"}
             {publishState === "idle" && (
               <>
-                Publish <Cloud />
+                Save <Save />
               </>
             )}
           </Button>
