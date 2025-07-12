@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             Upgrade <Cloudy />
           </Button>
           <Button onClick={() => (window.location.href = "/dashboard/new")}>
-            Add New <Plus />
+            Create  <Plus />
           </Button>
           <SignedIn><UserButton /></SignedIn>
         </div>
