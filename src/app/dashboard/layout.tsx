@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const links = [
     { href: "/dashboard", label: "Overview" },
-    { href: "/dashboard/ai", label: "AI" },
+    { href: "/dashboard/ai", label: "Ai" },
     { href: "/dashboard/IDE", label: "Editor" },
     { href: "/dashboard/integration", label: "Integration" },
     { href: "/dashboard/support", label: "Support" },

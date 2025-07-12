@@ -2,6 +2,7 @@
 
 import {
   Globe,
+  Sparkles,
   Server,
   Activity,
   Rocket,
@@ -9,8 +10,9 @@ import {
   Ellipsis,
   Check,
   X,
+  Code,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,47 +25,72 @@ const icons = [Globe, Server, Activity, Rocket, Cloud];
 
 export default function OverviewPage() {
   const { sites, setSites, setSelectedSite, setHtml } = useSite();
+  const [loading, setLoading] = useState(true); // <- New loading state
 
-useEffect(() => {
-  const loadAndRedirect = async () => {
-    try {
-      const res = await fetch("/api/dashboard/sites");
-      const data = await res.json();
-      setSites(data);
+  useEffect(() => {
+    const loadAndRedirect = async () => {
+      try {
+        const res = await fetch("/api/dashboard/sites");
+        const data = await res.json();
+        setSites(data);
+        setLoading(false); // <- Stop loading after data fetched
 
-      if (data.length > 0) {
-        setSelectedSite(data[0]);
-        const html = await fetch(`/${data[0].routeName}`).then((r) =>
-          r.text()
-        );
-        setHtml(html);
-      }
-
-      // Check for ?open_site= query param
-      const params = new URLSearchParams(window.location.search);
-      const openSite = params.get("open_site");
-
-      if (openSite) {
-        const match = data.find((site: any) => site.name === openSite);
-        if (match) {
-          setTimeout(() => {
-            window.location.href = `/dashboard/IDE?site=${encodeURIComponent(match.name)}`;
-          }, 1000); // 4 seconds delay
+        if (data.length > 0) {
+          setSelectedSite(data[0]);
+          const html = await fetch(`/${data[0].routeName}`).then((r) =>
+            r.text()
+          );
+          setHtml(html);
         }
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
-  loadAndRedirect();
-}, []);
+        const params = new URLSearchParams(window.location.search);
+        const openSite = params.get("open_site");
+        const openSiteMode = params.get("open_site_mode"); // can be "ai" or "IDE"
+
+        if (openSite) {
+          const match = data.find((site: any) => site.name === openSite);
+          if (match) {
+            const mode = openSiteMode === "ai" ? "ai" : "IDE";
+            setTimeout(() => {
+              window.location.href = `/dashboard/${mode}?site=${encodeURIComponent(
+                match.name
+              )}`;
+            }, 1000);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load sites:", error);
+        setLoading(false);
+      }
+    };
+
+    loadAndRedirect();
+  }, []);
+
+  // Helper function to format date
+  const formatDate = (dateString:string) => {
+    const year = dateString.slice(0, 4);
+    const month = dateString.slice(5, 7);
+    const day = dateString.slice(8, 10);
+    
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    return `${parseInt(day)} ${monthNames[parseInt(month) - 1]}`;
+  };
 
   return (
     <div className="flex flex-col min-h-[75vh]">
       <h1 className="font-bold text-xs opacity-30">Projects</h1>
 
-      {sites.length === 0 ? (
+      {loading ? (
+        // ✅ Loading animation (you can customize this)
+        <div className="flex-1  flex items-center justify-center py-20 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400 mx-auto" />
+        </div>
+      ) : sites.length === 0 ? (
+        // ✅ Only show when not loading and no sites
         <div className="flex flex-1 items-center justify-center py-20 text-center">
           <div className="space-y-2">
             <div className="text-4xl">🚧</div>
@@ -76,6 +103,7 @@ useEffect(() => {
           </div>
         </div>
       ) : (
+        // ✅ Sites grid
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-4">
           {sites.map((site, i) => {
             const Icon = icons[i % icons.length];
@@ -111,7 +139,10 @@ useEffect(() => {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() => {
-                          window.location.href = `/dashboard/IDE?site=${encodeURIComponent(site.name)}`;
+                          const route = site.buildType === "ai" ? "ai" : "IDE";
+                          window.location.href = `/dashboard/${route}?site=${encodeURIComponent(
+                            site.name
+                          )}`;
                         }}
                       >
                         Open Project
@@ -158,8 +189,12 @@ useEffect(() => {
 
                 <div className="w-full flex flex-col pt-6">
                   {site.buildType === "static" ? (
-                    <div className="text-xs font-bold opacity-60 flex items-center gap-1">
-                      <Check strokeWidth={3} size={16} /> Static Build
+                    <div className="text-xs font-bold opacity-60 flex items-center gap-2">
+                      <Code strokeWidth={2} size={16} /> Static Build
+                    </div>
+                  ) : site.buildType === "ai" ? (
+                    <div className="text-xs font-bold opacity-60 flex items-center gap-2">
+                      <Sparkles strokeWidth={2} size={16} /> Ai Build
                     </div>
                   ) : (
                     <div className="text-xs font-bold opacity-60 flex items-center gap-1 text-red-600 dark:text-red-200">
@@ -167,10 +202,7 @@ useEffect(() => {
                     </div>
                   )}
                   <div className="text-sm opacity-40 mt-1">
-                    {new Date(site.createdAt).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                    })}
+                    {formatDate(site.createdAt)}
                   </div>
                 </div>
               </div>

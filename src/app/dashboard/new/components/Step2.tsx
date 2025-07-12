@@ -7,6 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 type Step2Props = {
   description: string;
   setDescription: (v: string) => void;
+  targetUser: string;
+  settargetUser: (v:string)=> void;
+  title: string;
+  settitle: (v:string) => void;
   onBack: () => void;
   onFinish: () => void;
 };
@@ -16,6 +20,10 @@ export default function Step2({
   setDescription,
   onBack,
   onFinish,
+  targetUser,
+  settargetUser,
+  title,
+  settitle,
 }: Step2Props) {
   return (
     <>
@@ -29,6 +37,8 @@ export default function Step2({
             <div className="mt-10 flex flex-col gap-3">
         <label className="text-sm">Project Title</label>
         <Input
+          value={title}
+          onChange={(e) => {settitle(e.target.value)}}
           type="text"
           placeholder="Cooking app"
         />
@@ -38,6 +48,8 @@ export default function Step2({
             <div className="mt-5 flex flex-col gap-3">
         <label className="text-sm">Whom does your site traget?</label>
         <Input
+          value={targetUser}
+          onChange={(e) => {settargetUser(e.target.value)}}
           type="text"
           placeholder="student"
         />
@@ -50,12 +62,6 @@ export default function Step2({
           value={description}
           onChange={(e) => setDescription(e.target.value)} placeholder="Type your message here." />
       </div>
-
-
-
-
-      
-
       <div className="w-full h-fit mt-8 flex flex-row gap-3">
         <Button className="w-1/5" variant={'outline'} onClick={onBack}>
           Back

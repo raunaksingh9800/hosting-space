@@ -57,9 +57,9 @@ export default function Step1({
             hosting.space/{route}{" "}
             {route && (
               <>
-                {routeStatus === "checking" && "Checking availability..."}
+                {routeStatus === "checking" && "Checking..."}
                 {routeStatus === "available" &&  <span className=" text-green-400">is available</span>}
-                {routeStatus === "taken" && <span className=" text-red-400">is already taken</span>}
+                {routeStatus === "taken" && <span className=" text-red-400">is taken</span>}
               </>
             )}{" "}
           </strong>

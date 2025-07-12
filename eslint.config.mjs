@@ -24,6 +24,8 @@ const eslintConfig = [
       "src/app/dashboard/IDE/IDE.tsx",
       "src/app/dashboard/page.tsx",
       "src/app/[site]/route.ts",
+      "src/app/dashboard/ai/page.tsx",
+      "src/app/dashboard/ai/Ai.tsx"
     ],
   },
 ];

@@ -1,3 +1,10 @@
-export default function AiPage() {
-  return <div>This is the AI content.</div>;
+import AiPage from "./Ai";
+import { Suspense } from "react";
+
+export default function IDEPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AiPage />
+    </Suspense>
+  );
 }

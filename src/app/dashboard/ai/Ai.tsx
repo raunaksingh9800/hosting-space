@@ -8,7 +8,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Editor from "@monaco-editor/react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,20 +15,30 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Cloud, ChevronDown, ExternalLink, Check, Globe, Sparkles } from "lucide-react";
+import {
+  Cloud,
+  ChevronDown,
+  ExternalLink,
+  Check,
+  Globe,
+  Code,
 
-export default function IDE() {
+  ArrowUp,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+export default function AiPage() {
   const searchParams = useSearchParams();
   const { sites, setSites, selectedSite, setSelectedSite, html, setHtml } =
     useSite();
 
-  const [code, setCode] = useState(html);
   const [iframeKey, setIframeKey] = useState(0);
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
   const [publishState, setPublishState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
 
-  // Fetch all sites & optionally load one by name from query
   useEffect(() => {
     const loadSites = async () => {
       try {
@@ -43,7 +52,7 @@ export default function IDE() {
           if (matched) {
             setTimeout(() => {
               handleSelect(matched);
-            }, 4000); // 4s delay before loading site
+            }, 4000);
           }
         }
       } catch (err) {
@@ -54,21 +63,43 @@ export default function IDE() {
     loadSites();
   }, []);
 
-  // Update editor & preview when HTML changes
-  useEffect(() => {
-    setCode(html);
-    setIframeKey((k) => k + 1);
-  }, [html]);
-
   const handleSelect = async (site: (typeof sites)[number]) => {
     setSelectedSite(site);
     const html = await fetch(`/${site.routeName}`).then((r) => r.text());
     setHtml(html);
+    setIframeKey((k) => k + 1);
   };
 
-  const handleSave = () => {
-    localStorage.setItem("preview-code", code);
-    setIframeKey((k) => k + 1);
+  const handleSendPrompt = async () => {
+    if (!selectedSite || !prompt.trim()) return;
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/editwithai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          existingHtml: html,
+          editPrompt: prompt,
+          name: selectedSite.name, // IMPORTANT: must match DB value
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.html) {
+        setHtml(data.html);
+        setIframeKey((k) => k + 1);
+        setPrompt(""); // Clear prompt after success
+      } else {
+        console.error(data.error);
+        alert(data.error || "Something went wrong");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePublish = async () => {
@@ -81,7 +112,7 @@ export default function IDE() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           routeName: selectedSite.routeName,
-          code,
+          code: html,
         }),
       });
 
@@ -96,16 +127,12 @@ export default function IDE() {
     }
   };
 
-  useEffect(() => {
-    const handleShortcut = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, [code]);
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSendPrompt();
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -135,18 +162,15 @@ export default function IDE() {
         <div className="flex items-center gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              {selectedSite && (
-                <a
-                  href={`/dashboard/ai?site=${selectedSite.name}`}
-
-                  className="opacity-60 hover:opacity-100 transition"
-                >
-                  <Sparkles  size={20} />
-                </a>
-              )}
+              <a
+                href={`/dashboard/IDE?site=${selectedSite?.name}`}
+                className="opacity-60 hover:opacity-100 transition"
+              >
+                <Code size={20} />
+              </a>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Edit with Ai</p>
+              <p>Open Code Editor</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -173,14 +197,13 @@ export default function IDE() {
                 href="/dev/preview"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={handleSave}
                 className="opacity-60 hover:opacity-100 transition"
               >
                 <ExternalLink size={20} />
               </a>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Open Privew in new tab</p>
+              <p>Open Preview in new tab</p>
             </TooltipContent>
           </Tooltip>
 
@@ -231,39 +254,44 @@ export default function IDE() {
       </div>
 
       {/* Main layout */}
-      <div className="flex flex-col md:flex-row gap-6 rounded h-[80vh]">
-        {/* Editor */}
-        <div className="flex-1 flex flex-col min-h-[250px] max-h-full shadow-sm">
-          <div className="bg-black/10 rounded-t dark:bg-white/10 text-xs px-3 py-1 font-mono border-b border-black/20 dark:border-white/20">
-        html
+      <div className="flex flex-col h-[90vh] md:flex-row gap-6 rounded">
+        <div className="flex-1 rounded shadow-sm">
+          <div className="mb-4 flex gap-2">
+            <Input
+              placeholder="Describe the change you want..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={loading}
+            />
+            <Button
+              onClick={handleSendPrompt}
+              variant={"outline"}
+              disabled= {!prompt.trim()}
+            >
+              {loading ? (
+                <>
+                  <h1 className="text-center">
+                    
+                    <span className=" animate-pulse bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent font-semibold">
+                      Thinking
+                    </span>
+                  </h1>
+                </>
+              ) : (
+                <>
+                  <ArrowUp />
+                </>
+              )}
+            </Button>
           </div>
-          <div className="flex-1 min-h-0">
-        <Editor
-          height="100%"
-          language="html"
-          value={code}
-          onChange={(v) => setCode(v || "")}
-          className="rounded-b overflow-hidden"
-          theme="vs-dark"
-          options={{
-            fontSize: 14,
-            minimap: { enabled: false },
-            wordWrap: "on",
-            scrollbar: { verticalScrollbarSize: 4 },
-            automaticLayout: true,
-          }}
-        />
-          </div>
-        </div>
 
-        {/* Preview */}
-        <div className="flex flex-1 min-h-[250px] max-h-full rounded bg-white/5 shadow-sm">
           <iframe
-        key={iframeKey}
-        title="preview"
-        srcDoc={code}
-        sandbox="allow-scripts allow-same-origin allow-modals"
-        className="w-full h-full rounded"
+            key={iframeKey}
+            title="preview"
+            srcDoc={html}
+            sandbox="allow-scripts allow-same-origin allow-modals"
+            className="w-full rounded h-full"
           />
         </div>
       </div>

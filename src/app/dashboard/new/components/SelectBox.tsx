@@ -21,7 +21,8 @@ export default function SelectBox({ selected, onChange }: Props) {
           const Icon = option.icon;
           const isActive = selected === i;
           const isAI = option.label === "Create with AI";
-          const isDisabled = i !== 0; // Only "Custom Build" is enabled
+          // Disable Templates option
+          const isDisabled = option.label === "Templates";
 
           return (
             <button
