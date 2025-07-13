@@ -12,7 +12,7 @@ export default function NotFound() {
         </div>{" "}
       </nav>
       <div className="mt-42 flex flex-col items-center justify-center text-center px-6">
-        <h1 className="text-8xl">😢</h1>
+        <h1 className="text-8xl">🚧</h1>
         <h2 className=" text-3xl font-semibold">Oops </h2>
         <h2 className=" mt-1  opacity-40 text-xl">404 | Page not found</h2>
         <Link

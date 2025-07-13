@@ -8,6 +8,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Editor from "@monaco-editor/react";
 import {
   DropdownMenu,
@@ -16,7 +22,19 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Save, ChevronDown, ExternalLink, Check, Globe, Sparkles } from "lucide-react";
+import {
+  Save,
+  ChevronDown,
+  ExternalLink,
+  Check,
+  Globe,
+  Sparkles,
+  Share,
+  Share2,
+  Copy,
+  CheckCircle,
+} from "lucide-react";
+import QRCode from "qrcode";
 
 export default function IDE() {
   const searchParams = useSearchParams();
@@ -28,6 +46,9 @@ export default function IDE() {
   const [publishState, setPublishState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
   // Fetch all sites & optionally load one by name from query
   useEffect(() => {
@@ -96,6 +117,52 @@ export default function IDE() {
     }
   };
 
+  const getShareUrl = () => {
+    if (!selectedSite) return "";
+    
+    // Check if we're in development or production
+    const isLocalhost = window.location.hostname === "localhost";
+    const baseUrl = isLocalhost 
+      ? `http://localhost:3000` 
+      : `https://hosting-space.vercel.app`;
+    
+    return `${baseUrl}/${selectedSite.routeName}`;
+  };
+
+  const handleShare = async () => {
+    if (!selectedSite) return;
+    
+    const shareUrl = getShareUrl();
+    
+    try {
+      // Generate QR code
+      const qrCode = await QRCode.toDataURL(shareUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#ffffff',
+          light: '#000'
+        }
+      });
+      setQrCodeUrl(qrCode);
+      setShareModalOpen(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    const shareUrl = getShareUrl();
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
   useEffect(() => {
     const handleShortcut = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
@@ -136,12 +203,26 @@ export default function IDE() {
           <Tooltip>
             <TooltipTrigger asChild>
               {selectedSite && (
-                <a
-                  href={`/dashboard/ai?site=${selectedSite.name}`}
-
+                <button
+                  onClick={handleShare}
                   className="opacity-60 hover:opacity-100 transition"
                 >
-                  <Sparkles  size={20} />
+                  <Share2 size={20} />
+                </button>
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Share</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {selectedSite && (
+                <a
+                  href={`/dashboard/ai?site=${selectedSite.name}`}
+                  className="opacity-60 hover:opacity-100 transition"
+                >
+                  <Sparkles size={20} />
                 </a>
               )}
             </TooltipTrigger>
@@ -230,40 +311,82 @@ export default function IDE() {
         </div>
       </div>
 
+      {/* Share Modal */}
+      <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Project</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            {/* QR Code */}
+            {qrCodeUrl && (
+              <div className=" p-4 rounded-lg">
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            
+            {/* URL Display */}
+            <div className="w-full">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={getShareUrl()}
+                  readOnly
+                  className="flex-1 px-3 py-2 border rounded-md  text-sm"
+                />
+                <Button
+                  onClick={handleCopyToClipboard}
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 " />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Main layout */}
       <div className="flex flex-col md:flex-row gap-6 rounded h-[80vh]">
         {/* Editor */}
         <div className="flex-1 flex flex-col min-h-[250px] max-h-full shadow-sm">
           <div className="bg-black/10 rounded-t dark:bg-white/10 text-xs px-3 py-1 font-mono border-b border-black/20 dark:border-white/20">
-        html
+            html
           </div>
           <div className="flex-1 min-h-0">
-        <Editor
-          height="100%"
-          language="html"
-          value={code}
-          onChange={(v) => setCode(v || "")}
-          className="rounded-b overflow-hidden"
-          theme="vs-dark"
-          options={{
-            fontSize: 14,
-            minimap: { enabled: false },
-            wordWrap: "on",
-            scrollbar: { verticalScrollbarSize: 4 },
-            automaticLayout: true,
-          }}
-        />
+            <Editor
+              height="100%"
+              language="html"
+              value={code}
+              onChange={(v) => setCode(v || "")}
+              className="rounded-b overflow-hidden"
+              theme="vs-dark"
+              options={{
+                fontSize: 14,
+                minimap: { enabled: false },
+                wordWrap: "on",
+                scrollbar: { verticalScrollbarSize: 4 },
+                automaticLayout: true,
+              }}
+            />
           </div>
         </div>
 
         {/* Preview */}
         <div className="flex flex-1 min-h-[250px] max-h-full rounded bg-white/5 shadow-sm">
           <iframe
-        key={iframeKey}
-        title="preview"
-        srcDoc={code}
-        sandbox="allow-scripts allow-same-origin allow-modals"
-        className="w-full h-full rounded"
+            key={iframeKey}
+            title="preview"
+            srcDoc={code}
+            sandbox="allow-scripts allow-same-origin allow-modals"
+            className="w-full h-full rounded"
           />
         </div>
       </div>

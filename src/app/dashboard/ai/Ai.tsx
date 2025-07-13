@@ -9,6 +9,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -23,8 +29,12 @@ import {
   Globe,
   Code,
   ArrowUp,
+  Share2,
+  Copy,
+  CheckCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import QRCode from "qrcode";
 
 export default function AiPage() {
   const searchParams = useSearchParams();
@@ -37,6 +47,9 @@ export default function AiPage() {
   const [publishState, setPublishState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadSites = async () => {
@@ -126,6 +139,52 @@ export default function AiPage() {
     }
   };
 
+  const getShareUrl = () => {
+    if (!selectedSite) return "";
+    
+    // Check if we're in development or production
+    const isLocalhost = window.location.hostname === "localhost";
+    const baseUrl = isLocalhost 
+      ? `http://localhost:3000` 
+      : `https://hosting-space.vercel.app`;
+    
+    return `${baseUrl}/${selectedSite.routeName}`;
+  };
+
+  const handleShare = async () => {
+    if (!selectedSite) return;
+    
+    const shareUrl = getShareUrl();
+    
+    try {
+      // Generate QR code
+      const qrCode = await QRCode.toDataURL(shareUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#ffffff',
+          light: '#000'
+        }
+      });
+      setQrCodeUrl(qrCode);
+      setShareModalOpen(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    const shareUrl = getShareUrl();
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -159,6 +218,21 @@ export default function AiPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {selectedSite && (
+                <button
+                  onClick={handleShare}
+                  className="opacity-60 hover:opacity-100 transition"
+                >
+                  <Share2 size={20} />
+                </button>
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Share</p>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <a
@@ -251,6 +325,48 @@ export default function AiPage() {
           </Button>
         </div>
       </div>
+
+      {/* Share Modal */}
+      <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Project</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            {/* QR Code */}
+            {qrCodeUrl && (
+              <div className=" p-4 rounded-lg">
+                <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+              </div>
+            )}
+            
+            {/* URL Display */}
+            <div className="w-full">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={getShareUrl()}
+                  readOnly
+                  className="flex-1 px-3 py-2 border rounded-md  text-sm"
+                />
+                <Button
+                  onClick={handleCopyToClipboard}
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 " />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Main layout */}
       <div className="flex flex-col h-[90vh] md:flex-row gap-6 rounded">

@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { editHtmlWithGemini } from "@/lib/gemini";
 
+import { getUserApiKey } from "@/lib/enc";
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -29,17 +31,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
-    // Get user from DB to compare
-    const user = await prisma.user.findUnique({ where: { authId: userId } });
+    // Get user from DB with AI provider and API key info
+    const user = await prisma.user.findUnique({
+      where: { authId: userId },
+      select: {
+        id: true,
+        aiProvider: true,
+        apiKey: true,
+      },
+    });
 
     if (!user || site.ownerId !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updatedHtml = await editHtmlWithGemini(existingHtml, editPrompt, name);
+    // Determine API key to use
+    let apiKeyToUse: string | undefined = undefined;
+
+    try {
+      apiKeyToUse = getUserApiKey(user, "gemini");
+    } catch (error) {
+      console.error("Error decrypting user API key:", error);
+      return NextResponse.json(
+        {
+          error:
+            "Invalid API key configuration. Please reconfigure your API key.",
+        },
+        { status: 400 }
+      );
+    }
+    // If no AI provider or not Gemini, apiKeyToUse stays undefined
+    // This will make the editHtmlWithGemini function use your stored API key
+
+    const updatedHtml = await editHtmlWithGemini(
+      existingHtml,
+      editPrompt,
+      name,
+      apiKeyToUse
+    );
 
     return NextResponse.json({ html: updatedHtml });
-  } catch  {
+  } catch (error) {
+    console.error("Error editing HTML:", error);
     return NextResponse.json(
       { error: "Failed to edit HTML with Gemini" },
       { status: 500 }

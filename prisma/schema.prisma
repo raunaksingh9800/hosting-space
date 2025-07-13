@@ -1,4 +1,3 @@
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -9,21 +8,23 @@ generator client {
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
-  name       String?
-  authId     String  @unique
-  aiCredits  Int     @default(0)
-  plan       String  @default("free")
-  siteCount  Int     @default(0)
-  sites      Site[]
+  id          Int     @id @default(autoincrement())
+  name        String?
+  authId      String  @unique
+  aiCredits   Int     @default(0)
+  plan        String  @default("free")
+  siteCount   Int     @default(0)
+  aiProvider  String?
+  apiKey      String?
+  sites       Site[]
 }
 
 model Site {
   id         Int      @id @default(autoincrement())
-  routeName  String
-  name       String
+  routeName  String   
+  name       String   
   visits     Int      @default(0)
-  buildType  String
+  buildType  String   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   owner      User     @relation(fields: [ownerId], references: [id])

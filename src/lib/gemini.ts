@@ -1,15 +1,24 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+function getGeminiClient(apiKey?: string): GoogleGenerativeAI {
+    const key = apiKey || process.env.GEMINI_API_KEY || "";
+    if (!key) {
+        throw new Error("Gemini API key is required. Please provide it as a parameter or set GEMINI_API_KEY environment variable.");
+    }
+    return new GoogleGenerativeAI(key);
+}
 
-export async function generateHtmlWithGemini(prompt: string, name: string): Promise<string> {
+export async function generateHtmlWithGemini(
+    prompt: string, 
+    name: string, 
+    apiKey?: string
+): Promise<string> {
     try {
+        const genAI = getGeminiClient(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const fullPrompt = `
-You're an expert web developer. Generate clean, production-ready HTML code for a single-page website.
-The website is titled "${name}". The theme or idea is: "${prompt}".
-Return only valid HTML. Do not include JavaScript or external CSS unless absolutely necessary.
+You're an expert web developer. Generate clean, production-ready HTML code for a single-page website. The website is titled "${name}". The theme or idea is: "${prompt}". Return only valid HTML. Do not include JavaScript or external CSS unless absolutely necessary.
 `;
 
         const result = await model.generateContent(fullPrompt);
@@ -26,8 +35,14 @@ Return only valid HTML. Do not include JavaScript or external CSS unless absolut
     }
 }
 
-export async function editHtmlWithGemini(existingHtml: string, editPrompt: string, name: string): Promise<string> {
+export async function editHtmlWithGemini(
+    existingHtml: string, 
+    editPrompt: string, 
+    name: string, 
+    apiKey?: string
+): Promise<string> {
     try {
+        const genAI = getGeminiClient(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const fullPrompt = `

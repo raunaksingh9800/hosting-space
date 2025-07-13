@@ -17,11 +17,26 @@ export default function AiPage() {
   const [description, setDescription] = useState("");
 
   const [routeStatus, setRouteStatus] = useState<
-    "idle" | "checking" | "available" | "taken"
+    "idle" | "checking" | "available" | "taken" | "invalid"
   >("idle");
+
+  // Route validation function
+  const validateRoute = (routeName: string): boolean => {
+    if (!routeName) return false;
+    
+    // Only allow letters, numbers, and hyphens
+    const validRouteRegex = /^[a-zA-Z0-9-]+$/;
+    return validRouteRegex.test(routeName);
+  };
 
   const handleNext = async () => {
     if (step === 1) {
+      // Validate route before proceeding
+      if (!validateRoute(route)) {
+        alert("Route name can only contain letters, numbers, and hyphens (-)");
+        return;
+      }
+
       if (buildTypeIndex === 0) {
         // Static Site: Create immediately
         try {
@@ -115,10 +130,16 @@ export default function AiPage() {
 
   const handleBack = () => setStep((prev) => prev - 1);
 
-  // Debounce route check
+  // Debounce route check with validation
   useEffect(() => {
     if (!route) {
       setRouteStatus("idle");
+      return;
+    }
+
+    // Check if route contains invalid characters
+    if (!validateRoute(route)) {
+      setRouteStatus("invalid");
       return;
     }
 

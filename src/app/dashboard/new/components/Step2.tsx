@@ -28,7 +28,7 @@ export default function Step2({
   return (
     <>
       <h1 className="text-2xl md:text-3xl mt-2 md:mt-5 text-center">
-        Let’s Build Something{" "}
+        Let&apos;s Build Something{" "}
         <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent font-semibold">
           Amazing.
         </span>
