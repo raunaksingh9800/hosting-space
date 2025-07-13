@@ -47,7 +47,7 @@ export default function DashboardLayout({
         </a>
         <div className="flex gap-4 md:gap-5">
           <ModeToggle />
-          <div className=" text-xs flex justify-center font-medium items-center dark:border px-3 rounded-lg">
+          <div className="hidden text-xs md:flex justify-center font-medium items-center dark:border px-3 rounded-lg">
             Free tier
           </div>
           <Button onClick={() => (window.location.href = "/dashboard/plans")} className="hidden md:flex" variant="outline">
