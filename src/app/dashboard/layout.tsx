@@ -39,15 +39,17 @@ export default function DashboardLayout({
 
   return (
     <SiteProvider>
-      <nav className="w-screen h-10 flex justify-between items-center px-5 md:px-10 mt-5 mb-7 md:mb-5">
+<div className=" absolute top-0 left-0 w-screen h-[10vh] pointer-events-none z-[-1] animate-gradient bg-gradient-to-br dark:opacity-25 from-[#ff243a] via-[#95ff32] to-[#01b7ff] blur-3xl opacity-50 dark:from-[#ff280b] dark:via-[#32ffb7] dark:to-[rgb(224,255,163)]"></div>
+
+      <nav className=" w-screen h-10 flex justify-between items-center px-5 md:px-10 mt-5 mb-7 md:mb-5">
         <a className="text-lg" href="/">
           Hosting <strong>Space</strong>
         </a>
         <div className="flex gap-4 md:gap-5">
           <ModeToggle />
-          <Badge className="hidden md:flex" variant="outline">
-            Free Tier
-          </Badge>
+          <div className=" text-xs flex justify-center font-medium items-center dark:border px-3 rounded-lg">
+            Free tier
+          </div>
           <Button onClick={() => (window.location.href = "/dashboard/plans")} className="hidden md:flex" variant="outline">
             Upgrade <Cloudy />
           </Button>
