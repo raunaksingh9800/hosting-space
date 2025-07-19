@@ -38,58 +38,68 @@ export default function DashboardLayout({
   };
 
   return (
-    <SiteProvider>
-<div className=" absolute top-0 left-0 w-screen h-[10vh] pointer-events-none z-[-1] animate-gradient bg-gradient-to-br dark:opacity-25 from-[#ff243a] via-[#95ff32] to-[#01b7ff] blur-3xl opacity-50 dark:from-[#ff280b] dark:via-[#32ffb7] dark:to-[rgb(224,255,163)]"></div>
-
-      <nav className=" w-screen h-10 flex justify-between items-center px-5 md:px-10 mt-5 mb-7 md:mb-5">
-        <a className="text-lg" href="/">
-          Hosting <strong>Space</strong>
-        </a>
-        <div className="flex gap-4 md:gap-5">
-          <ModeToggle />
-          <div className="hidden text-xs md:flex justify-center font-medium items-center dark:border px-3 rounded-lg">
-            Free tier
-          </div>
-          <Button onClick={() => (window.location.href = "/dashboard/plans")} className="hidden md:flex" variant="outline">
-            Upgrade <Cloudy />
-          </Button>
-          <Button onClick={() => (window.location.href = "/dashboard/new")}>
-            Create <Plus />
-          </Button>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-        </div>
-      </nav>
-
-      <div className="relative flex gap-6 overflow-x-scroll text-sm mx-5 md:mx-10 text-black/40 dark:text-white/40">
-        {links.map(({ href, label }) => {
-          const isActive = isActiveLink(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`relative pb-3 ${
-                isActive
-                  ? "text-black dark:text-white font-bold"
-                  : "hover:text-black dark:hover:text-white"
-              }`}
-            >
-              {label}
-              {isActive && (
-                <motion.div
-                  layoutId="underline"
-                  className="absolute bottom-0 left-0 w-full h-[2px] bg-black dark:bg-white"
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              )}
-            </Link>
-          );
-        })}
+    <>
+      <div className="fixed top-0 import left-0 w-screen h-[20vh] flex justify-center items-start  md:items-center overflow-hidden opacity-50 dark:opacity-30  -z-40">
+        <img src="/bg2.jpg" alt="back" className="" />
+        <div className=" absolute top-0 left-0 w-screen h-[20vh] bg-gradient-to-b from-white/0 to-white dark:from-black/0 dark:to-black"></div>
       </div>
+      <SiteProvider>
+        {/* <div   pointer-events-none z-[-1] bg-gradient-to-br dark:opacity-25 from-[#ff243a] via-[#95ff32] to-[#01b7ff] blur-3xl opacity-50 dark:from-[#ff280b] dark:via-[#32ffb7] dark:to-[rgb(224,255,163)]"></div> */}
 
-      <div className="mx-5 md:mx-10 mt-5">{children}</div>
-      <FooterComp />
-    </SiteProvider>
+        <nav className=" w-screen h-10 flex justify-between items-center px-5 md:px-10 mt-5 mb-7 md:mb-5">
+          <a className="text-lg" href="/">
+            Hosting <strong>Space</strong>
+          </a>
+          <div className="flex gap-4 md:gap-5">
+            <ModeToggle />
+            <div className="hidden text-xs md:flex justify-center font-medium items-center dark:border px-3 rounded-lg">
+              Free tier
+            </div>
+            <Button
+              onClick={() => (window.location.href = "/dashboard/plans")}
+              className="hidden md:flex"
+              variant="outline"
+            >
+              Upgrade <Cloudy />
+            </Button>
+            <Button onClick={() => (window.location.href = "/dashboard/new")}>
+              Create <Plus />
+            </Button>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </div>
+        </nav>
+
+        <div className="relative flex gap-6 overflow-x-scroll text-sm mx-5 md:mx-10 text-black/40 dark:text-white/40">
+          {links.map(({ href, label }) => {
+            const isActive = isActiveLink(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative pb-3 ${
+                  isActive
+                    ? "text-black dark:text-white font-bold"
+                    : "hover:text-black dark:hover:text-white"
+                }`}
+              >
+                {label}
+                {isActive && (
+                  <motion.div
+                    layoutId="underline"
+                    className="absolute bottom-0 left-0 w-full h-[2px] bg-black dark:bg-white"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mx-5 md:mx-10 mt-5">{children}</div>
+        <FooterComp />
+      </SiteProvider>
+    </>
   );
 }

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { editHtmlWithGemini } from "@/lib/gemini";
-
 import { getUserApiKey } from "@/lib/enc";
 
 export async function POST(req: NextRequest) {
@@ -13,7 +12,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { existingHtml, editPrompt, name } = await req.json();
-
     if (!existingHtml || !editPrompt || !name) {
       return NextResponse.json(
         { error: "Missing required fields: existingHtml, editPrompt, name" },
@@ -47,34 +45,47 @@ export async function POST(req: NextRequest) {
 
     // Determine API key to use
     let apiKeyToUse: string | undefined = undefined;
-
     try {
       apiKeyToUse = getUserApiKey(user, "gemini");
     } catch (error) {
       console.error("Error decrypting user API key:", error);
       return NextResponse.json(
         {
-          error:
-            "Invalid API key configuration. Please reconfigure your API key.",
+          error: "Invalid API key configuration. Please reconfigure your API key.",
         },
         { status: 400 }
       );
     }
-    // If no AI provider or not Gemini, apiKeyToUse stays undefined
-    // This will make the editHtmlWithGemini function use your stored API key
 
-    const updatedHtml = await editHtmlWithGemini(
+    // Call the updated Gemini function that returns both HTML and response
+    const result = await editHtmlWithGemini(
       existingHtml,
       editPrompt,
       name,
       apiKeyToUse
     );
 
-    return NextResponse.json({ html: updatedHtml });
+    // Return both the updated HTML and Gemini's response message
+    return NextResponse.json({
+      html: result.html,
+      message: result.message,
+      success: true,
+      timestamp: new Date().toISOString(),
+    });
+
   } catch (error) {
     console.error("Error editing HTML:", error);
+    
+    // Return more detailed error information
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    
     return NextResponse.json(
-      { error: "Failed to edit HTML with Gemini" },
+      { 
+        error: "Failed to edit HTML with Gemini",
+        details: errorMessage,
+        success: false,
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }

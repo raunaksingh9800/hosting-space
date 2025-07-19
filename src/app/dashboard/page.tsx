@@ -111,7 +111,7 @@ export default function OverviewPage() {
             return (
               <div
                 key={site.id}
-                className="border transition-all border-black/25 dark:border-white/25 border-dotted rounded-lg hover:dark:border-white/60 hover:border-black/80 hover:rounded-2xl px-5 py-5 flex flex-col"
+                className="border backdrop-blur-md transition-all border-black/25 dark:border-white/25 border-dotted rounded-lg hover:dark:border-white/60 hover:border-black/80 hover:rounded-2xl px-5 py-5 flex flex-col"
               >
                 <div className="w-full flex justify-between items-center">
                   <div className="flex items-center">

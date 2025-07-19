@@ -15,7 +15,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="w-full h-[70vh] flex flex-col lg:flex-row gap-4">
       {/* Navigation - horizontal on mobile, vertical on desktop */}
-      <div className="w-full lg:w-[20%] lg:h-full flex flex-row lg:flex-col gap-6 lg:gap-6 border rounded px-6 lg:px-4 py-6 lg:py-4 overflow-x-auto lg:overflow-x-visible">
+      <div className="w-full backdrop-blur-md lg:w-[20%] lg:h-full flex flex-row lg:flex-col gap-6 lg:gap-6 border rounded px-6 lg:px-4 py-6 lg:py-4 overflow-x-auto lg:overflow-x-visible">
         {links.map((link) => {
           const isActive = pathname === link.href;
           return (
@@ -38,7 +38,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </div>
       
       {/* Content area */}
-      <div className="w-full lg:w-[80%] flex-1 lg:h-full border rounded">
+      <div className="w-full lg:w-[80%] flex-1 lg:h-full border rounded backdrop-blur-md">
         {children}
       </div>
     </div>

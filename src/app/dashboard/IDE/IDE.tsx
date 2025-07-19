@@ -27,9 +27,7 @@ import {
   ChevronDown,
   ExternalLink,
   Check,
-  Globe,
   Sparkles,
-  Share,
   Share2,
   Copy,
   CheckCircle,
@@ -230,23 +228,7 @@ export default function IDE() {
               <p>Edit with Ai</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {selectedSite && (
-                <a
-                  href={`/${selectedSite.routeName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="opacity-60 hover:opacity-100 transition"
-                >
-                  <Globe size={20} />
-                </a>
-              )}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Project Link</p>
-            </TooltipContent>
-          </Tooltip>
+
 
           <Tooltip>
             <TooltipTrigger asChild>
