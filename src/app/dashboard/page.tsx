@@ -38,7 +38,7 @@ export default function OverviewPage() {
         if (data.length > 0) {
           setSelectedSite(data[0]);
           const html = await fetch(`/${data[0].routeName}`).then((r) =>
-            r.text()
+            r.text(),
           );
           setHtml(html);
         }
@@ -53,7 +53,7 @@ export default function OverviewPage() {
             const mode = openSiteMode === "ai" ? "ai" : "IDE";
             setTimeout(() => {
               window.location.href = `/dashboard/${mode}?site=${encodeURIComponent(
-                match.name
+                match.name,
               )}`;
             }, 1000);
             return;
@@ -69,14 +69,26 @@ export default function OverviewPage() {
   }, []);
 
   // Helper function to format date
-  const formatDate = (dateString:string) => {
+  const formatDate = (dateString: string) => {
     const year = dateString.slice(0, 4);
     const month = dateString.slice(5, 7);
     const day = dateString.slice(8, 10);
-    
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
     return `${parseInt(day)} ${monthNames[parseInt(month) - 1]}`;
   };
 
@@ -97,7 +109,7 @@ export default function OverviewPage() {
             <div className="text-lg font-semibold opacity-60">
               No sites created yet
             </div>
-            <div className="text-sm opacity-[42%]">
+            <div className="text-sm opacity-42">
               Your deployed projects will appear here
             </div>
           </div>
@@ -112,9 +124,18 @@ export default function OverviewPage() {
               <div
                 key={site.id}
                 className="border backdrop-blur-md transition-all border-black/25 dark:border-white/25 border-dotted rounded-lg hover:dark:border-white/60 hover:border-black/80 hover:rounded-2xl px-5 py-5 flex flex-col"
+
               >
                 <div className="w-full flex justify-between items-center">
-                  <div className="flex items-center">
+                  <div
+                    className="flex items-center"
+                    onClick={() => {
+                      const route = site.buildType === "ai" ? "ai" : "IDE";
+                      window.location.href = `/dashboard/${route}?site=${encodeURIComponent(
+                        site.name,
+                      )}`;
+                    }}
+                  >
                     <Icon size={30} />
                     <div className="pl-3">
                       <div className="font-semibold text-sm">{site.name}</div>
@@ -141,7 +162,7 @@ export default function OverviewPage() {
                         onClick={() => {
                           const route = site.buildType === "ai" ? "ai" : "IDE";
                           window.location.href = `/dashboard/${route}?site=${encodeURIComponent(
-                            site.name
+                            site.name,
                           )}`;
                         }}
                       >
@@ -157,7 +178,7 @@ export default function OverviewPage() {
                       <DropdownMenuItem
                         onClick={async () => {
                           const confirmed = confirm(
-                            `Are you sure you want to delete "${site.name}"?`
+                            `Are you sure you want to delete "${site.name}"?`,
                           );
                           if (!confirmed) return;
 
@@ -172,8 +193,8 @@ export default function OverviewPage() {
                             setSites(
                               sites.filter(
                                 (s: typeof site) =>
-                                  s.routeName !== site.routeName
-                              )
+                                  s.routeName !== site.routeName,
+                              ),
                             );
                           } else {
                             const err = await res.json();
@@ -187,7 +208,15 @@ export default function OverviewPage() {
                   </DropdownMenu>
                 </div>
 
-                <div className="w-full flex flex-col pt-6">
+                <div
+                  className="w-full flex flex-col pt-6  "
+                  onClick={() => {
+                    const route = site.buildType === "ai" ? "ai" : "IDE";
+                    window.location.href = `/dashboard/${route}?site=${encodeURIComponent(
+                      site.name,
+                    )}`;
+                  }}
+                >
                   {site.buildType === "static" ? (
                     <div className="text-xs font-bold opacity-60 flex items-center gap-2">
                       <Code strokeWidth={2} size={16} /> Static Build

@@ -39,9 +39,9 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="fixed top-0 import left-0 w-screen h-[20vh] flex justify-center items-start  md:items-center overflow-hidden opacity-50 dark:opacity-30  -z-40">
-        <img src="/bg2.jpg" alt="back" className="" />
-        <div className=" absolute top-0 left-0 w-screen h-[20vh] bg-gradient-to-b from-white/0 to-white dark:from-black/0 dark:to-black"></div>
+      <div className="fixed top-0 import left-0 w-screen h-[40vh] flex justify-center items-start  md:items-center overflow-hidden opacity-80 dark:opacity-60  -z-40">
+        <img src="/bg3.jpg" alt="back" className="" />
+        <div className=" absolute top-0 left-0 w-screen h-[40vh] bg-gradient-to-b from-white/0 to-white dark:from-black/0 dark:to-black"></div>
       </div>
       <SiteProvider>
         {/* <div   pointer-events-none z-[-1] bg-gradient-to-br dark:opacity-25 from-[#ff243a] via-[#95ff32] to-[#01b7ff] blur-3xl opacity-50 dark:from-[#ff280b] dark:via-[#32ffb7] dark:to-[rgb(224,255,163)]"></div> */}

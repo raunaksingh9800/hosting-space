@@ -1,122 +1,115 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-function getGeminiClient(apiKey?: string): GoogleGenerativeAI {
-    const key = apiKey || process.env.GEMINI_API_KEY || "";
-    if (!key) {
-        throw new Error("Gemini API key is required. Please provide it as a parameter or set GEMINI_API_KEY environment variable.");
-    }
-    return new GoogleGenerativeAI(key);
+function getGeminiClient(apiKey?: string) {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("Missing GEMINI_API_KEY");
+  return new GoogleGenerativeAI(key);
 }
 
+/* ============================
+   1️⃣ GENERATE NEW WEBSITE
+============================ */
 export async function generateHtmlWithGemini(
-    prompt: string, 
-    name: string, 
-    apiKey?: string
+  prompt: string,
+  name: string,
+  apiKey?: string
 ): Promise<string> {
-    try {
-        const genAI = getGeminiClient(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const genAI = getGeminiClient(apiKey);
 
-        const fullPrompt = `
-You're an expert web developer. Generate clean, production-ready HTML code for a single-page website. The website is titled "${name}". The theme or idea is: "${prompt}". Return only valid HTML. Do not include JavaScript or external CSS unless absolutely necessary.
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-flash-preview",
+  });
+
+  const fullPrompt = `
+You are an expert web developer.
+
+Create a COMPLETE, production-ready HTML5 website.
+
+Website name: "${name}"
+
+User request:
+"${prompt}"
+
+Rules:
+- Use clean semantic HTML
+- Include inline CSS (no external libraries)
+- Mobile responsive
+- Return ONLY full HTML
+- Wrap output in \`\`\`html
+
+Do NOT explain anything.
 `;
 
-        const result = await model.generateContent(fullPrompt);
-        const response = await result.response;
-        let text = response.text();
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: fullPrompt }],
+      },
+    ],
+  });
 
-        // Remove html code block markers if present
-        text = text.replace(/^```html\s*|^```\s*|```$/gim, "").trim();
+  const text = result.response.text();
+  const match = text.match(/```html([\s\S]*?)```/i);
 
-        return text;
-    } catch (error) {
-        console.error("Gemini generation error:", error);
-        throw new Error("Gemini API error");
-    }
+  if (!match) {
+    throw new Error("Gemini did not return valid HTML");
+  }
+
+  return match[1].trim();
 }
 
+/* ============================
+   2️⃣ EDIT EXISTING WEBSITE
+============================ */
 export async function editHtmlWithGemini(
   existingHtml: string,
   editPrompt: string,
   name: string,
   apiKey?: string
 ): Promise<{ html: string; message: string }> {
-  try {
-    const genAI = getGeminiClient(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-    
-    const fullPrompt = `
-You're an expert web developer. Here is the current HTML for a website titled "${name}":
+  const genAI = getGeminiClient(apiKey);
 
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-flash-preview",
+  });
+
+  const fullPrompt = `
+Update the following HTML for "${name}".
+
+Instruction:
+"${editPrompt}"
+
+Rules:
+- Return COMPLETE updated HTML
+- Wrap output in \`\`\`html
+- Also give a short summary of what changed
+
+Current HTML:
 ${existingHtml}
-
-User request: "${editPrompt}"
-
-Please respond in this format:
-1. First, provide a brief, friendly confirmation message (1-2 sentences) explaining what changes you made
-2. Then provide the complete updated HTML code
-
-Make sure to:
-- Implement the requested changes accurately
-- Maintain the existing structure and functionality
-- Keep the code clean and production-ready
-- Don't include unnecessary JavaScript or external CSS
-
-Your response should be conversational and helpful, like a skilled developer teammate.
 `;
 
-    const result = await model.generateContent(fullPrompt);
-    const response = await result.response;
-    let text = response.text();
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: fullPrompt }],
+      },
+    ],
+  });
 
-    // Extract the confirmation message and HTML
-    let message = "I've successfully made the requested changes to your website!";
-    let html = text;
+  const text = result.response.text();
 
-    // Look for HTML start indicators
-    const htmlMarkers = ['<!DOCTYPE', '<html', '```html'];
-    let htmlStartIndex = -1;
-
-    for (const marker of htmlMarkers) {
-      const index = text.indexOf(marker);
-      if (index !== -1) {
-        htmlStartIndex = index;
-        break;
-      }
-    }
-
-    if (htmlStartIndex > 0) {
-      // Extract message before HTML
-      const messageText = text.substring(0, htmlStartIndex).trim();
-      if (messageText.length > 0) {
-        // Clean up the message (remove markdown, extra formatting)
-        message = messageText
-          .replace(/^#+\s*/gm, '') // Remove markdown headers
-          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
-          .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
-          .replace(/`(.*?)`/g, '$1') // Remove inline code formatting
-          .trim();
-        
-        // Take only the first meaningful sentence or two
-        const sentences = message.split(/[.!?]+/);
-        if (sentences.length > 2) {
-          message = sentences.slice(0, 2).join('. ').trim() + '.';
-        }
-      }
-      
-      html = text.substring(htmlStartIndex);
-    }
-
-    // Remove code block markers if present
-    html = html.replace(/^```html\s*|^```\s*|```$/gim, "").trim();
-
-    return {
-      html,
-      message: message || "I've successfully updated your website with the requested changes!"
-    };
-
-  } catch (error) {
-    console.error("Gemini edit error:", error);
-    throw new Error(`Gemini API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  const match = text.match(/```html([\s\S]*?)```/i);
+  if (!match) {
+    throw new Error("Gemini did not return valid HTML");
   }
+
+  const message =
+    text.split("```")[0]?.trim() || "HTML updated successfully";
+
+  return {
+    html: match[1].trim(),
+    message,
+  };
 }
