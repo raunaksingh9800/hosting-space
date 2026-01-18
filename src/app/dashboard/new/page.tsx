@@ -8,6 +8,7 @@ import Step2 from "./components/Step2";
 export default function AiPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingComplete, setLoadingComplete] = useState(false);
 
   const [buildTypeIndex, setBuildTypeIndex] = useState(1); // default: Create with AI
   const [projectName, setProjectName] = useState("");
@@ -15,15 +16,14 @@ export default function AiPage() {
   const [title, settitle] = useState("");
   const [target, settarget] = useState("");
   const [description, setDescription] = useState("");
+  type RouteStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
-  const [routeStatus, setRouteStatus] = useState<
-    "idle" | "checking" | "available" | "taken" | "invalid"
-  >("idle");
+  const [routeStatus, setRouteStatus] = useState<RouteStatus>("idle");
 
   // Route validation function
   const validateRoute = (routeName: string): boolean => {
     if (!routeName) return false;
-    
+
     // Only allow letters, numbers, and hyphens
     const validRouteRegex = /^[a-zA-Z0-9-]+$/;
     return validRouteRegex.test(routeName);
@@ -41,6 +41,7 @@ export default function AiPage() {
         // Static Site: Create immediately
         try {
           setLoading(true);
+          setLoadingComplete(false);
 
           const res = await fetch("/api/newsite", {
             method: "POST",
@@ -52,9 +53,8 @@ export default function AiPage() {
             }),
           });
 
-          setLoading(false);
-
           if (!res.ok) {
+            setLoading(false);
             let errMsg = "Something went wrong";
             try {
               const err = await res.json();
@@ -67,13 +67,17 @@ export default function AiPage() {
             return;
           }
 
-          // Redirect after short delay
+          // Show completion message
+          setLoadingComplete(true);
+
+          // Redirect after showing completion message
           setTimeout(() => {
-          window.location.href = `/dashboard?open_site=${encodeURIComponent(projectName)}&open_site_mode=IDE`;
-          }, 800);
+            window.location.href = `/dashboard?open_site=${encodeURIComponent(projectName)}&open_site_mode=IDE`;
+          }, 1500);
         } catch (e) {
           alert("Unexpected error: " + (e as Error).message);
           setLoading(false);
+          setLoadingComplete(false);
         }
       } else if (buildTypeIndex === 1) {
         // AI Site: Go to Step 2 for additional info
@@ -87,6 +91,7 @@ export default function AiPage() {
       // Finish AI site creation
       try {
         setLoading(true);
+        setLoadingComplete(false);
 
         const prompt = `Title: ${title}\nTarget Audience: ${target}\nDescription: ${description}`;
 
@@ -101,9 +106,8 @@ export default function AiPage() {
           }),
         });
 
-        setLoading(false);
-
         if (!res.ok) {
+          setLoading(false);
           let errMsg = "Something went wrong";
           try {
             const err = await res.json();
@@ -116,12 +120,17 @@ export default function AiPage() {
           return;
         }
 
+        // Show completion message
+        setLoadingComplete(true);
+
+        // Redirect after showing completion message
         setTimeout(() => {
           window.location.href = `/dashboard?open_site=${encodeURIComponent(projectName)}&open_site_mode=ai`;
-        }, 800);
+        }, 1500);
       } catch (e) {
         alert("Unexpected error: " + (e as Error).message);
         setLoading(false);
+        setLoadingComplete(false);
       }
 
       return;
@@ -188,14 +197,28 @@ export default function AiPage() {
       {loading && (
         <div className="fixed inset-0 z-50 backdrop-blur bg-black/30 flex flex-col items-center justify-center">
           <span className="loader"></span>
-          <h1 className="text-2xl md:text-3xl mt-2 md:mt-5 text-center">
-            Building Something{" "}
-            <span className="  bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent font-semibold">
-              Amazing.
-            </span>
-          </h1>
-          
-          <p className="mt-3 opacity-70">Can take up to a Minute</p>
+
+          {!loadingComplete ? (
+            <>
+              <h1 className="text-2xl md:text-3xl mt-2 md:mt-5 text-center">
+                Building Something{" "}
+                <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent font-semibold">
+                  Amazing.
+                </span>
+              </h1>
+              <p className="mt-3 opacity-70">Can take up to a Minute</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl md:text-3xl mt-2 md:mt-5 text-center font-semibold">
+                Build Your{" "}
+                <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                  Imagination
+                </span>
+              </h1>
+              <p className="mt-3 opacity-70">Redirecting to the editor...</p>
+            </>
+          )}
         </div>
       )}
       <AnimatePresence mode="wait">
@@ -236,7 +259,7 @@ export default function AiPage() {
               targetUser={target}
               settargetUser={settarget}
               onBack={handleBack}
-              onFinish={handleNext} // instead of inline alert
+              onFinish={handleNext}
             />
           </motion.div>
         )}

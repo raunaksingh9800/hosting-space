@@ -34,6 +34,46 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 
+// Skeleton Components
+const EditorSkeleton = () => (
+  <div className="flex-1 flex flex-col min-h-[250px] max-h-full shadow-sm">
+    <div className="bg-black/10 rounded-t dark:bg-white/10 text-xs px-3 py-1 font-mono border-b border-black/20 dark:border-white/20">
+      <div className="h-4 w-8 bg-gray-400/20 rounded animate-pulse" />
+    </div>
+    <div className="flex-1 min-h-0 bg-[#1e1e1e] rounded-b p-4 space-y-2">
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          className="h-4 bg-gray-700/30 rounded animate-pulse"
+          style={{ width: `${Math.random() * 40 + 60}%` }}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+const PreviewSkeleton = () => (
+  <div className="flex flex-1 min-h-[250px] max-h-full rounded bg-white/5 shadow-sm p-8">
+    <div className="w-full h-full flex flex-col space-y-4">
+      <div className="h-12 bg-gray-400/10 rounded animate-pulse" />
+      <div className="h-32 bg-gray-400/10 rounded animate-pulse" />
+      <div className="flex-1 bg-gray-400/10 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
+const TopBarSkeleton = () => (
+  <div className="flex justify-between items-center mb-5">
+    <div className="h-6 w-40 bg-gray-400/20 rounded animate-pulse" />
+    <div className="flex items-center gap-4">
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-10 w-24 bg-gray-400/20 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
 export default function IDE() {
   const searchParams = useSearchParams();
   const { sites, setSites, selectedSite, setSelectedSite, html, setHtml } =
@@ -47,10 +87,13 @@ export default function IDE() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSiteLoading, setIsSiteLoading] = useState(false);
 
   // Fetch all sites & optionally load one by name from query
   useEffect(() => {
     const loadSites = async () => {
+      setIsLoading(true);
       try {
         const res = await fetch("/api/dashboard/sites");
         const data = await res.json();
@@ -60,13 +103,17 @@ export default function IDE() {
         if (siteName) {
           const matched = data.find((s: any) => s.name === siteName);
           if (matched) {
-            setTimeout(() => {
-              handleSelect(matched);
-            }, 0); // 4s delay before loading site
+            setIsSiteLoading(true);
+            setTimeout(async () => {
+              await handleSelect(matched);
+              setIsSiteLoading(false);
+            }, 0);
           }
         }
       } catch (err) {
         console.error("Failed to fetch sites", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -80,9 +127,16 @@ export default function IDE() {
   }, [html]);
 
   const handleSelect = async (site: (typeof sites)[number]) => {
+    setIsSiteLoading(true);
     setSelectedSite(site);
-    const html = await fetch(`/${site.routeName}`).then((r) => r.text());
-    setHtml(html);
+    try {
+      const html = await fetch(`/${site.routeName}`).then((r) => r.text());
+      setHtml(html);
+    } catch (err) {
+      console.error("Failed to load site", err);
+    } finally {
+      setIsSiteLoading(false);
+    }
   };
 
   const handleSave = () => {
@@ -118,7 +172,6 @@ export default function IDE() {
   const getShareUrl = () => {
     if (!selectedSite) return "";
     
-    // Check if we're in development or production
     const isLocalhost = window.location.hostname === "localhost";
     const baseUrl = isLocalhost 
       ? `http://localhost:3000` 
@@ -133,7 +186,6 @@ export default function IDE() {
     const shareUrl = getShareUrl();
     
     try {
-      // Generate QR code
       const qrCode = await QRCode.toDataURL(shareUrl, {
         width: 200,
         margin: 2,
@@ -172,29 +224,46 @@ export default function IDE() {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [code]);
 
+  // Show skeleton loader during initial load
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <TopBarSkeleton />
+        <div className="flex flex-col md:flex-row gap-6 rounded h-[80vh]">
+          <EditorSkeleton />
+          <PreviewSkeleton />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div className="flex items-center gap-2 font-semibold">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="flex items-center cursor-pointer">
-                <span>{selectedSite?.name || "Select Project"}</span>
-                <ChevronDown className="ml-1 mt-[2px]" />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="ml-8">
-              {sites.map((site) => (
-                <DropdownMenuItem
-                  key={site.id}
-                  onClick={() => handleSelect(site)}
-                >
-                  {site.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isSiteLoading ? (
+            <div className="h-6 w-40 bg-gray-400/20 rounded animate-pulse" />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center cursor-pointer">
+                  <span>{selectedSite?.name || "Select Project"}</span>
+                  <ChevronDown className="ml-1 mt-[2px]" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="ml-8">
+                {sites.map((site) => (
+                  <DropdownMenuItem
+                    key={site.id}
+                    onClick={() => handleSelect(site)}
+                  >
+                    {site.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -204,6 +273,7 @@ export default function IDE() {
                 <button
                   onClick={handleShare}
                   className="opacity-60 hover:opacity-100 transition"
+                  disabled={isSiteLoading}
                 >
                   <Share2 size={20} />
                 </button>
@@ -229,7 +299,6 @@ export default function IDE() {
             </TooltipContent>
           </Tooltip>
 
-
           <Tooltip>
             <TooltipTrigger asChild>
               <a
@@ -243,13 +312,13 @@ export default function IDE() {
               </a>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Open Privew in new tab</p>
+              <p>Open Preview in new tab</p>
             </TooltipContent>
           </Tooltip>
 
           <Button
             onClick={handlePublish}
-            disabled={publishState === "loading"}
+            disabled={publishState === "loading" || isSiteLoading}
             className={`
               transition-colors duration-300
               ${publishState === "success" ? "bg-green-600 text-white" : ""}
@@ -300,21 +369,19 @@ export default function IDE() {
             <DialogTitle>Share Project</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            {/* QR Code */}
             {qrCodeUrl && (
-              <div className=" p-4 rounded-lg">
+              <div className="p-4 rounded-lg">
                 <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
               </div>
             )}
             
-            {/* URL Display */}
             <div className="w-full">
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   value={getShareUrl()}
                   readOnly
-                  className="flex-1 px-3 py-2 border rounded-md  text-sm"
+                  className="flex-1 px-3 py-2 border rounded-md text-sm"
                 />
                 <Button
                   onClick={handleCopyToClipboard}
@@ -323,13 +390,12 @@ export default function IDE() {
                   className="shrink-0"
                 >
                   {copied ? (
-                    <CheckCircle className="h-4 w-4 " />
+                    <CheckCircle className="h-4 w-4" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
                 </Button>
               </div>
-
             </div>
           </div>
         </DialogContent>
@@ -337,40 +403,49 @@ export default function IDE() {
 
       {/* Main layout */}
       <div className="flex flex-col md:flex-row gap-6 rounded h-[80vh]">
-        {/* Editor */}
-        <div className="flex-1 flex flex-col min-h-[250px] max-h-full shadow-sm">
-          <div className="bg-black/10 rounded-t dark:bg-white/10 text-xs px-3 py-1 font-mono border-b border-black/20 dark:border-white/20">
-            html
-          </div>
-          <div className="flex-1 min-h-0">
-            <Editor
-              height="100%"
-              language="html"
-              value={code}
-              onChange={(v) => setCode(v || "")}
-              className="rounded-b overflow-hidden"
-              theme="vs-dark"
-              options={{
-                fontSize: 14,
-                minimap: { enabled: false },
-                wordWrap: "on",
-                scrollbar: { verticalScrollbarSize: 4 },
-                automaticLayout: true,
-              }}
-            />
-          </div>
-        </div>
+        {isSiteLoading ? (
+          <>
+            <EditorSkeleton />
+            <PreviewSkeleton />
+          </>
+        ) : (
+          <>
+            {/* Editor */}
+            <div className="flex-1 flex flex-col min-h-[250px] max-h-full shadow-sm">
+              <div className="bg-black/10 rounded-t dark:bg-white/10 text-xs px-3 py-1 font-mono border-b border-black/20 dark:border-white/20">
+                html
+              </div>
+              <div className="flex-1 min-h-0">
+                <Editor
+                  height="100%"
+                  language="html"
+                  value={code}
+                  onChange={(v) => setCode(v || "")}
+                  className="rounded-b overflow-hidden"
+                  theme="vs-dark"
+                  options={{
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    wordWrap: "on",
+                    scrollbar: { verticalScrollbarSize: 4 },
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+            </div>
 
-        {/* Preview */}
-        <div className="flex flex-1 min-h-[250px] max-h-full rounded bg-white/5 shadow-sm">
-          <iframe
-            key={iframeKey}
-            title="preview"
-            srcDoc={code}
-            sandbox="allow-scripts allow-same-origin allow-modals"
-            className="w-full h-full rounded"
-          />
-        </div>
+            {/* Preview */}
+            <div className="flex flex-1 min-h-[250px] max-h-full rounded bg-white/5 shadow-sm">
+              <iframe
+                key={iframeKey}
+                title="preview"
+                srcDoc={code}
+                sandbox="allow-scripts allow-same-origin allow-modals"
+                className="w-full h-full rounded"
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

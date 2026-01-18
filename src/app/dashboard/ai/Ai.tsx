@@ -49,6 +49,52 @@ interface Site {
   routeName: string;
 }
 
+// Skeleton Components
+const TopBarSkeleton = () => (
+  <div className="flex justify-between items-center mb-5">
+    <div className="h-6 w-40 bg-gray-400/20 rounded animate-pulse" />
+    <div className="flex items-center gap-4">
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-5 w-5 bg-gray-400/20 rounded animate-pulse" />
+      <div className="h-10 w-24 bg-gray-400/20 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
+const ChatPanelSkeleton = () => (
+  <div className="flex flex-col w-full md:w-1/3 items-end justify-end border rounded-lg px-4 bg-white/5 shadow-sm">
+    <div className="overflow-y-auto flex flex-col h-full w-full mb-6 items-start mt-6 gap-4">
+      <div className="w-full flex justify-end">
+        <div className="h-16 w-3/4 bg-gray-400/10 rounded animate-pulse" />
+      </div>
+      <div className="w-full flex justify-start">
+        <div className="h-20 w-2/3 bg-gray-400/10 rounded animate-pulse" />
+      </div>
+      <div className="w-full flex justify-end">
+        <div className="h-12 w-3/5 bg-gray-400/10 rounded animate-pulse" />
+      </div>
+    </div>
+    <div className="w-full mb-4 pt-4 border-t">
+      <div className="flex gap-2">
+        <div className="flex-1 h-10 bg-gray-400/10 rounded animate-pulse" />
+        <div className="h-10 w-20 bg-gray-400/10 rounded animate-pulse" />
+      </div>
+    </div>
+  </div>
+);
+
+const PreviewPanelSkeleton = () => (
+  <div className="w-full md:w-2/3 h-[100vh] md:h-full">
+    <div className="w-full h-full rounded-lg border shadow-sm bg-gray-100 dark:bg-white/5 p-8 flex flex-col gap-4">
+      <div className="h-12 bg-gray-400/10 rounded animate-pulse" />
+      <div className="h-32 bg-gray-400/10 rounded animate-pulse" />
+      <div className="flex-1 bg-gray-400/10 rounded animate-pulse" />
+      <div className="h-20 bg-gray-400/10 rounded animate-pulse" />
+    </div>
+  </div>
+);
+
 export default function AiPage() {
   const searchParams = useSearchParams();
   const { sites, setSites, selectedSite, setSelectedSite, html, setHtml } =
@@ -59,9 +105,14 @@ export default function AiPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSiteLoading, setIsSiteLoading] = useState(false);
+  
+  // FIX 1: Corrected Generic Syntax
   const [publishState, setPublishState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -72,8 +123,10 @@ export default function AiPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatMessages]);
+
   useEffect(() => {
     const loadSites = async () => {
+      setIsInitialLoading(true);
       try {
         const res = await fetch("/api/dashboard/sites");
         const data = await res.json();
@@ -83,13 +136,17 @@ export default function AiPage() {
         if (siteName) {
           const matched = data.find((s: Site) => s.name === siteName);
           if (matched) {
-            setTimeout(() => {
-              handleSelect(matched);
+            setIsSiteLoading(true);
+            setTimeout(async () => {
+              await handleSelect(matched);
+              setIsSiteLoading(false);
             }, 0);
           }
         }
       } catch (err) {
         console.error("Failed to fetch sites", err);
+      } finally {
+        setIsInitialLoading(false);
       }
     };
 
@@ -97,7 +154,8 @@ export default function AiPage() {
   }, []);
 
   const handleSelect = async (site: Site) => {
-    setSelectedSite(site as any); // Type assertion as temporary fix
+    setIsSiteLoading(true);
+    setSelectedSite(site as any);
     try {
       const response = await fetch(`/${site.routeName}`);
       const htmlContent = await response.text();
@@ -105,6 +163,8 @@ export default function AiPage() {
       setIframeKey((k) => k + 1);
     } catch (error) {
       console.error("Failed to load site HTML:", error);
+    } finally {
+      setIsSiteLoading(false);
     }
   };
 
@@ -146,11 +206,9 @@ export default function AiPage() {
         throw new Error(data.error || "Failed to edit HTML");
       }
 
-      // Update the HTML
       setHtml(data.html);
-      setIframeKey((prev) => prev + 1); // Force iframe refresh
+      setIframeKey((prev) => prev + 1);
 
-      // Update chat with Gemini's actual response
       setChatMessages((prev) => {
         const messages = [...prev];
         messages[messages.length - 1] = {
@@ -165,7 +223,6 @@ export default function AiPage() {
     } catch (error) {
       console.error("Error:", error);
 
-      // Update chat with error message
       setChatMessages((prev) => {
         const messages = [...prev];
         messages[messages.length - 1] = {
@@ -218,7 +275,6 @@ export default function AiPage() {
   const getShareUrl = () => {
     if (!selectedSite) return "";
 
-    // Check if we're in development or production
     const isLocalhost =
       typeof window !== "undefined" && window.location.hostname === "localhost";
     const baseUrl = isLocalhost
@@ -234,7 +290,6 @@ export default function AiPage() {
     const shareUrl = getShareUrl();
 
     try {
-      // Generate QR code
       const qrCode = await QRCode.toDataURL(shareUrl, {
         width: 200,
         margin: 2,
@@ -259,7 +314,6 @@ export default function AiPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
-      // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -274,6 +328,7 @@ export default function AiPage() {
       document.body.removeChild(textArea);
     }
   };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -281,30 +336,47 @@ export default function AiPage() {
     }
   };
 
+  if (isInitialLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <TopBarSkeleton />
+        <div className="min-h-screen h-auto md:min-h-0 md:h-[70vh] w-full gap-6 rounded">
+          <div className="w-full h-full flex flex-col md:flex-row-reverse gap-6">
+            <ChatPanelSkeleton />
+            <PreviewPanelSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Top bar */}
       <div className="flex justify-between items-center mb-5">
         <div className="flex items-center gap-2 font-semibold">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="flex items-center cursor-pointer hover:text-blue-600 transition-colors">
-                <span>{selectedSite?.name || "Select Project"}</span>
-                <ChevronDown className="ml-1 mt-[2px]" size={16} />
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="ml-8">
-              {sites.map((site) => (
-                <DropdownMenuItem
-                  key={site.id}
-                  onClick={() => handleSelect(site as any)} // Type assertion
-                  className="cursor-pointer"
-                >
-                  {site.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isSiteLoading ? (
+            <div className="h-6 w-40 bg-gray-400/20 rounded animate-pulse" />
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center cursor-pointer hover:text-blue-600 transition-colors">
+                  <span>{selectedSite?.name || "Select Project"}</span>
+                  <ChevronDown className="ml-1 mt-[2px]" size={16} />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="ml-8">
+                {sites.map((site) => (
+                  <DropdownMenuItem
+                    key={site.id}
+                    onClick={() => handleSelect(site as any)}
+                    className="cursor-pointer"
+                  >
+                    {site.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -315,6 +387,7 @@ export default function AiPage() {
                   onClick={handleShare}
                   className="opacity-60 hover:opacity-100 transition-opacity"
                   aria-label="Share project"
+                  disabled={isSiteLoading}
                 >
                   <Share2 size={20} />
                 </button>
@@ -327,6 +400,7 @@ export default function AiPage() {
 
           <Tooltip>
             <TooltipTrigger asChild>
+              {/* FIX 2: Added missing opening <a> tag */}
               <a
                 href={`/dashboard/IDE?site=${selectedSite?.name}`}
                 className="opacity-60 hover:opacity-100 transition-opacity"
@@ -342,6 +416,7 @@ export default function AiPage() {
 
           <Tooltip>
             <TooltipTrigger asChild>
+              {/* FIX 3: Added missing opening <a> tag */}
               <a
                 href={
                   selectedSite ? `/${selectedSite.routeName}` : "/dev/preview"
@@ -361,7 +436,7 @@ export default function AiPage() {
 
           <Button
             onClick={handlePublish}
-            disabled={publishState === "loading" || !selectedSite}
+            disabled={publishState === "loading" || !selectedSite || isSiteLoading}
             className={`
               transition-colors duration-300
               ${
@@ -414,28 +489,25 @@ export default function AiPage() {
         </div>
       </div>
 
-      {/* Share Modal */}
       <Dialog open={shareModalOpen} onOpenChange={setShareModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Share Project</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            {/* QR Code */}
             {qrCodeUrl && (
-              <div className=" p-4 rounded-lg">
+              <div className="p-4 rounded-lg">
                 <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
               </div>
             )}
-            
-            {/* URL Display */}
+
             <div className="w-full">
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   value={getShareUrl()}
                   readOnly
-                  className="flex-1 px-3 py-2 border rounded-md  text-sm"
+                  className="flex-1 px-3 py-2 border rounded-md text-sm"
                 />
                 <Button
                   onClick={handleCopyToClipboard}
@@ -444,131 +516,133 @@ export default function AiPage() {
                   className="shrink-0"
                 >
                   {copied ? (
-                    <CheckCircle className="h-4 w-4 " />
+                    <CheckCircle className="h-4 w-4" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
                 </Button>
               </div>
-
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Main layout */}
-      <div className=" min-h-screen h-auto md:min-h-0 md:h-[70vh] w-full gap-6 rounded">
+      <div className="min-h-screen h-auto md:min-h-0 md:h-[70vh] w-full gap-6 rounded">
         <div className="w-full h-full flex flex-col md:flex-row-reverse gap-6">
-          {/* Chat Panel */}
-          <div className="flex flex-col w-full md:w-1/3 items-end justify-end border rounded-lg px-4 bg-white/5 shadow-sm">
-            {/* Chat Messages Area */}
-            <div
-              ref={scrollRef}
-              className="overflow-y-auto backdrop-blur-md flex flex-col h-full w-full mb-6 items-start mt-6 gap-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-            >
-              {chatMessages.map((message, index) => (
+          {isSiteLoading ? (
+            <>
+              <ChatPanelSkeleton />
+              <PreviewPanelSkeleton />
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col w-full md:w-1/3 items-end justify-end border rounded-lg px-4 bg-white/5 shadow-sm">
                 <div
-                  key={index}
-                  className={`w-full ${
-                    message.type === "user"
-                      ? "flex justify-end"
-                      : "flex justify-start"
-                  }`}
+                  ref={scrollRef}
+                  className="overflow-y-auto backdrop-blur-md flex flex-col h-full w-full mb-6 items-start mt-6 gap-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                 >
-                  {message.type === "user" ? (
-                    <div className="text-right text-sm border-r-2 border-white pr-4 py-3 max-w-[80%]   ">
-                      {message.content}
-                    </div>
-                  ) : (
-                    <div className="relative pl-3 py-3 text-left text-sm max-w-[80%]  rounded-r-lg rounded-tl-lg ">
-                      <div
-                        className={`absolute left-0 top-0 h-full w-[2px] ${
-                          message.isLoading ? "animate-pulse " : ""
-                        } bg-gradient-to-b 
-                        from-[#FF6F6F] to-[#147EFF] rounded-full`}
-                      ></div>
-                      <div className="pl-2">
-                        {message.isLoading ? (
-                          <div className="flex items-center gap-2 animate-pulse">
-                            Thinking
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="whitespace-pre-wrap">
-                              {message.content}
-                            </div>
-                            {message.timestamp && (
-                              <div className="text-xs text-gray-400 mt-1">
-                                {new Date(
-                                  message.timestamp
-                                ).toLocaleTimeString()}
+                  {chatMessages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`w-full ${
+                        message.type === "user"
+                          ? "flex justify-end"
+                          : "flex justify-start"
+                      }`}
+                    >
+                      {message.type === "user" ? (
+                        <div className="text-right text-sm border-r-2 border-white pr-4 py-3 max-w-[80%]">
+                          {message.content}
+                        </div>
+                      ) : (
+                        <div className="relative pl-3 py-3 text-left text-sm max-w-[80%] rounded-r-lg rounded-tl-lg">
+                          <div
+                            className={`absolute left-0 top-0 h-full w-[2px] ${
+                              message.isLoading ? "animate-pulse" : ""
+                            } bg-gradient-to-b from-[#FF6F6F] to-[#147EFF] rounded-full`}
+                          ></div>
+                          <div className="pl-2">
+                            {message.isLoading ? (
+                              <div className="flex items-center gap-2 animate-pulse">
+                                Thinking
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="whitespace-pre-wrap">
+                                  {message.content}
+                                </div>
+                                {message.timestamp && (
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    {new Date(
+                                      message.timestamp
+                                    ).toLocaleTimeString()}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* Input Area */}
-            <div className="w-full mb-4 pt-4 border-t">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Describe the change you want..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  disabled={loading || !selectedSite}
-                  className="flex-1"
-                  aria-label="Chat input"
-                />
-                <Button
-                  onClick={handleSendPrompt}
-                  variant="outline"
-                  disabled={!prompt.trim() || loading || !selectedSite}
-                  className="shrink-0 min-w-[80px]"
-                  aria-label="Send message"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  ) : (
-                    <ArrowUp size={16} />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Preview Panel */}
-          <div className="w-full md:w-2/3 h-[100vh] md:h-full">
-            {selectedSite ? (
-              <iframe
-                key={iframeKey}
-                title="Website Preview"
-                srcDoc={html}
-                sandbox="allow-scripts allow-same-origin allow-modals allow-forms"
-                className="w-full h-full rounded-lg border shadow-sm"
-                style={{ backgroundColor: "white" }}
-              />
-            ) : (
-              <div className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
-                <div className="text-center text-gray-500">
-                  <Code size={48} className="mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No Project Selected
-                  </h3>
-                  <p className="text-sm">
-                    Select a project from the dropdown to start editing
-                  </p>
+                <div className="w-full mb-4 pt-4 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Describe the change you want..."
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      disabled={loading || !selectedSite}
+                      className="flex-1"
+                      aria-label="Chat input"
+                    />
+                    <Button
+                      onClick={handleSendPrompt}
+                      variant="outline"
+                      disabled={!prompt.trim() || loading || !selectedSite}
+                      className="shrink-0 min-w-[80px]"
+                      aria-label="Send message"
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        <ArrowUp size={16} />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+
+              <div className="w-full md:w-2/3 h-[100vh] md:h-full">
+                {selectedSite ? (
+                  <iframe
+                    key={iframeKey}
+                    title="Website Preview"
+                    srcDoc={html}
+                    sandbox="allow-scripts allow-same-origin allow-modals allow-forms"
+                    className="w-full h-full rounded-lg border shadow-sm"
+                    style={{ backgroundColor: "white" }}
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                    <div className="text-center text-gray-500">
+                      <Code size={48} className="mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-medium mb-2">
+                        No Project Selected
+                      </h3>
+                      <p className="text-sm">
+                        Select a project from the dropdown to start editing
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
