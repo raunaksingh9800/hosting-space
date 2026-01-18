@@ -85,7 +85,7 @@ export default function AiPage() {
           if (matched) {
             setTimeout(() => {
               handleSelect(matched);
-            }, 4000);
+            }, 0);
           }
         }
       } catch (err) {

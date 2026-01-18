@@ -62,7 +62,7 @@ export default function IDE() {
           if (matched) {
             setTimeout(() => {
               handleSelect(matched);
-            }, 4000); // 4s delay before loading site
+            }, 0); // 4s delay before loading site
           }
         }
       } catch (err) {

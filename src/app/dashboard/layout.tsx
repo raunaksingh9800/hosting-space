@@ -39,7 +39,7 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="fixed top-0 import left-0 w-screen h-[40vh] flex justify-center items-start  md:items-center overflow-hidden opacity-80 dark:opacity-60  -z-40">
+      <div className="fixed top-0 import left-0 w-screen h-[40vh] flex justify-center items-start  md:items-center overflow-hidden opacity-10 lg:opacity-25 dark:opacity-60  -z-40">
         <img src="/bg3.jpg" alt="back" className="" />
         <div className=" absolute top-0 left-0 w-screen h-[40vh] bg-gradient-to-b from-white/0 to-white dark:from-black/0 dark:to-black"></div>
       </div>
